@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type TournamentInfo struct {
@@ -39,15 +40,10 @@ var Tournament = TournamentStorage{Trs: make(map[int]TournamentInfo)}
 func CreateUser(name string, balance int) {
 	Users.U[Users.lastsID] = User{Id: Users.lastsID, Name: name, Balance: balance}
 	Users.lastsID++
-	fmt.Println(Users.U)
 }
 
-func UpdateUser(id int, name string, balance int) {
-	Users.U[id] = User{Name: name, Balance: balance}
-}
-
-func GetUser(id int) {
-	log.Println(Users.U[id])
+func UpdateUser(id int, balance int) {
+	Users.U[id] = User{Id: id, Name: Users.U[id].Name, Balance: balance}
 }
 
 func DeleteUser(id int) {
@@ -61,24 +57,29 @@ func CreateTournament(tournamentName string, deposit int) {
 	log.Println(Tournament)
 }
 
-//1 gl obj -> variable empty trcuture []Tournament{}, 0 make
-// func UpdateTournaament(TournamentInfo, id) {
-
-// 	if TournamentInfo.name != "" {
-
-// 	}
-// }
+func MethodCheck(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		CreateUserHandler(w, r)
+	case "GET":
+		GetUserInfoHandler(w, r)
+	case "DELETE":
+		DeleteUserHandler(w, r)
+	default:
+		fmt.Fprint(w, "Please show the correct method")
+	}
+}
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var infoUser User
 	if r.Method == "POST" {
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(w, err.Error())
 		}
 		err = json.Unmarshal(data, &infoUser)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(w, err.Error())
 		}
 		CreateUser(infoUser.Name, infoUser.Balance)
 	} else {
@@ -86,20 +87,85 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == "GET" {
-// 		fmt.Println(r.URL.Path)
-// 	} else {
-// 		fmt.Fprint(w, "Please, give the correct method")
-// 	}
-// }
+func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["id"]
+	if !ok || len(keys[0]) < 1 {
+		fmt.Fprintf(w, "Url Param 'id' is missing")
+	}
+	key, err := strconv.Atoi(keys[0])
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+	fmt.Fprint(w, Users.U[key])
+}
+
+func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["id"]
+	if !ok || len(keys[0]) < 1 {
+		fmt.Fprintf(w, "Url Param 'id' is missing")
+	}
+	key, err := strconv.Atoi(keys[0])
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+	DeleteUser(key)
+}
+
+func SubtractBalanceFromUser(w http.ResponseWriter, r *http.Request) {
+	var infoUser User
+	if r.Method == "POST" {
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+		}
+		err = json.Unmarshal(data, &infoUser)
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+		}
+		keys, ok := r.URL.Query()["id"]
+		if !ok || len(keys[0]) < 1 {
+			fmt.Fprintf(w, "Url Param 'id' is missing")
+		}
+		key, err := strconv.Atoi(keys[0])
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+		}
+		UpdateUser(key, Users.U[key].Balance-infoUser.Balance)
+	} else {
+		fmt.Fprint(w, "Please, give the correct method")
+	}
+}
+
+func AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
+	var infoUser User
+	if r.Method == "POST" {
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+		}
+		err = json.Unmarshal(data, &infoUser)
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+		}
+		keys, ok := r.URL.Query()["id"]
+		if !ok || len(keys[0]) < 1 {
+			fmt.Fprintf(w, "Url Param 'id' is missing")
+		}
+		key, err := strconv.Atoi(keys[0])
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+		}
+		UpdateUser(key, Users.U[key].Balance+infoUser.Balance)
+	} else {
+		fmt.Fprint(w, "Please, give the correct method")
+	}
+}
 
 func main() {
 
-	http.HandleFunc("/user", CreateUserHandler)
-	//http.HandleFunc("/user/id", GetUserInfoHandler)
-	//http.HandleFunc("/user/{id}/fund", AddBonusPointsToUser)
-	//http.HandleFunc("/user/{id}/take", TakeBonusPointsFromUser)
+	http.HandleFunc("/user", MethodCheck)
+	http.HandleFunc("/user/take", SubtractBalanceFromUser)
+	http.HandleFunc("/user/fund", AddBalanceToUser)
 	fmt.Println("Server started at port 8080")
 	http.ListenAndServe(":8080", nil)
 }
