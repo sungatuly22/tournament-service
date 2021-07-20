@@ -1,24 +1,14 @@
-package main
+package db
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
-
-type TournamentInfo struct {
-	id      int
-	name    string
-	deposit int
-	prize   int
-	users   []int
-	winner  string
-}
 
 type User struct {
 	Id      int    `json:"id"`
@@ -31,13 +21,7 @@ type UserStorage struct {
 	lastsID int
 }
 
-type TournamentStorage struct {
-	Trs     map[int]TournamentInfo
-	lastsID int
-}
-
 var Users = UserStorage{U: make(map[int]User)}
-var Tournament = TournamentStorage{Trs: make(map[int]TournamentInfo)}
 
 func CreateUser(name string, balance int) {
 	Users.lastsID++
@@ -51,13 +35,6 @@ func UpdateUser(id int, balance int) {
 
 func DeleteUser(id int) {
 	delete(Users.U, id)
-}
-
-func CreateTournament(tournamentName string, deposit int) {
-
-	Tournament.Trs[Tournament.lastsID] = TournamentInfo{id: Tournament.lastsID, name: tournamentName, deposit: deposit}
-	Tournament.lastsID++
-	log.Println(Tournament)
 }
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,15 +102,4 @@ func AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, err.Error())
 	}
 	UpdateUser(id, Users.U[id].Balance+infoUser.Balance)
-}
-
-func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/user", CreateUserHandler).Methods("POST")
-	router.HandleFunc("/user/{id}", GetUserInfoHandler).Methods("GET")
-	router.HandleFunc("/user/{id}", DeleteUserHandler).Methods("DELETE")
-	router.HandleFunc("/user/{id}/fund", AddBalanceToUser).Methods("POST")
-	router.HandleFunc("/user/{id}/take", SubtractBalanceFromUser).Methods("POST")
-	fmt.Println("Server started at port 8080")
-	http.ListenAndServe(":8080", router)
 }
