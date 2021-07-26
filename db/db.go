@@ -1,105 +1,35 @@
 package db
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strconv"
+	"log"
 
-	"github.com/gorilla/mux"
+	"github.com/sungatuly22/tournament-service/pkg"
 )
 
-type User struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Balance int    `json:"balance"`
-}
-
 type UserStorage struct {
-	U       map[int]User
-	lastsID int
+	U map[int]pkg.User
 }
 
-var Users = UserStorage{U: make(map[int]User)}
-
-func CreateUser(name string, balance int) {
-	Users.lastsID++
-	Users.U[Users.lastsID] = User{Id: Users.lastsID, Name: name, Balance: balance}
-	fmt.Println(Users.U)
+func (storageUser UserStorage) Tezt(num int) {
+	log.Print(num)
 }
 
-func UpdateUser(id int, balance int) {
-	Users.U[id] = User{Id: id, Name: Users.U[id].Name, Balance: balance}
+// u := pkg.User{}
+
+func (storageUser UserStorage) CreateUser(infoUser pkg.User) pkg.User {
+	// storageUser.U = make(map[int]pkg.User)
+	storageUser.U[infoUser.Id] = pkg.User{Id: infoUser.Id, Name: infoUser.Name, Balance: infoUser.Balance}
+	fmt.Println(storageUser.U)
+	return storageUser.U[infoUser.Id]
 }
 
-func DeleteUser(id int) {
-	delete(Users.U, id)
+func (storageUser UserStorage) UpdateUser(infoUser pkg.User) pkg.User {
+	storageUser.U[infoUser.Id] = pkg.User{Id: infoUser.Id, Name: infoUser.Name, Balance: infoUser.Balance}
+	return storageUser.U[infoUser.Id]
 }
 
-func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var infoUser User
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	err = json.Unmarshal(data, &infoUser)
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	CreateUser(infoUser.Name, infoUser.Balance)
-}
-
-func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	fmt.Fprint(w, Users.U[id])
-}
-
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	DeleteUser(id)
-}
-
-func SubtractBalanceFromUser(w http.ResponseWriter, r *http.Request) {
-	var infoUser User
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Fprint(w, err.Error())
-	}
-	err = json.Unmarshal(data, &infoUser)
-	if err != nil {
-		fmt.Fprint(w, err.Error())
-	}
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	UpdateUser(id, Users.U[id].Balance-infoUser.Balance)
-}
-
-func AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
-	var infoUser User
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Fprint(w, err.Error())
-	}
-	err = json.Unmarshal(data, &infoUser)
-	if err != nil {
-		fmt.Fprint(w, err.Error())
-	}
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
-	UpdateUser(id, Users.U[id].Balance+infoUser.Balance)
+func (storageUser UserStorage) DeleteUser(id int) pkg.User {
+	delete(storageUser.U, id)
+	return storageUser.U[id]
 }

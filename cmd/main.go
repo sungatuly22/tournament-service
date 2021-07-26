@@ -1,13 +1,14 @@
 package main
 
 import (
-	"net/http"
+	"log"
 
 	"github.com/sungatuly22/tournament-service/server"
 )
 
 func main() {
 	srv := server.NewServer()
-	srv.Routes()
-	http.ListenAndServe(":8080", srv)
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatalf(err.Error())
+	}
 }
