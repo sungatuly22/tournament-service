@@ -15,10 +15,7 @@ func (storageUser UserStorage) Tezt(num int) {
 	log.Print(num)
 }
 
-// u := pkg.User{}
-
 func (storageUser UserStorage) CreateUser(infoUser pkg.User) pkg.User {
-	// storageUser.U = make(map[int]pkg.User)
 	storageUser.U[infoUser.Id] = pkg.User{Id: infoUser.Id, Name: infoUser.Name, Balance: infoUser.Balance}
 	fmt.Println(storageUser.U)
 	return storageUser.U[infoUser.Id]

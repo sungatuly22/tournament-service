@@ -67,7 +67,7 @@ func (s Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
 	}
-	s.Users.DeleteUser(id)
+	_ = s.Users.DeleteUser(id)
 }
 
 func (s Server) SubtractBalanceFromUser(w http.ResponseWriter, r *http.Request) {
@@ -103,5 +103,5 @@ func (s Server) AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
 	}
-	s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance + infoUser.Balance})
+	_ = s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance + infoUser.Balance})
 }
