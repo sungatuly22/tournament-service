@@ -41,15 +41,30 @@ func (s Server) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	infoUser := pkg.User{}
 
 	err = json.Unmarshal(data, &infoUser)
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	_ = s.Users.CreateUser(infoUser)
-
+	w.WriteHeader(http.StatusOK)
+	res := FromDomain(s.Users.CreateUser(infoUser))
+	inf, err := json.Marshal(res)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+	_, err = w.Write(inf)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s Server) GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
@@ -57,8 +72,11 @@ func (s Server) GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	fmt.Fprint(w, s.Users.U[id])
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,42 +84,80 @@ func (s Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	_ = s.Users.DeleteUser(id)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s Server) SubtractBalanceFromUser(w http.ResponseWriter, r *http.Request) {
 	infoUser := pkg.User{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Fprint(w, err.Error())
+		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = json.Unmarshal(data, &infoUser)
 	if err != nil {
-		fmt.Fprint(w, err.Error())
+		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	_ = s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance - infoUser.Balance})
+	w.WriteHeader(http.StatusOK)
+	res := FromDomain(s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance - infoUser.Balance}))
+	inf, err := json.Marshal(res)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+	_, err = w.Write(inf)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s Server) AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
 	infoUser := pkg.User{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Fprint(w, err.Error())
+		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = json.Unmarshal(data, &infoUser)
 	if err != nil {
-		fmt.Fprint(w, err.Error())
+		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	_ = s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance + infoUser.Balance})
+	w.WriteHeader(http.StatusOK)
+	res := FromDomain(s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance + infoUser.Balance}))
+	inf, err := json.Marshal(res)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+	_, err = w.Write(inf)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, err.Error())
+	}
+	w.WriteHeader(http.StatusCreated)
 }
