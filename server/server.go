@@ -56,6 +56,7 @@ func (s Server) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	res := FromDomain(s.Users.CreateUser(infoUser))
 	inf, err := json.Marshal(res)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, err.Error())
 		return
 	}
