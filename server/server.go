@@ -12,12 +12,16 @@ import (
 	"github.com/sungatuly22/tournament-service/pkg"
 )
 
+type Handler struct {
+	r *mux.Router
+}
+
 type Server struct {
 	httpServer *http.Server
 	Users      db.UserStorage
 }
 
-func NewServer() *Server {
+func NewHandler() *Handler {
 	s := &Server{}
 	r := mux.NewRouter()
 	s.httpServer = &http.Server{
@@ -30,11 +34,16 @@ func NewServer() *Server {
 	r.HandleFunc("/user/{id}", s.DeleteUserHandler).Methods("DELETE")
 	r.HandleFunc("/user/{id}/fund", s.AddBalanceToUser).Methods("POST")
 	r.HandleFunc("/user/{id}/take", s.SubtractBalanceFromUser).Methods("POST")
-	return s
+	return &Handler{
+		r: r,
+	}
 }
 
 func (s Server) ListenAndServe() error {
 	return s.httpServer.ListenAndServe()
+}
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.r.ServeHTTP(w, r)
 }
 
 func (s Server) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
