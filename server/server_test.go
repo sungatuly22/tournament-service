@@ -3,11 +3,13 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/sungatuly22/tournament-service/pkg"
 )
 
@@ -48,7 +50,7 @@ func TestCreateUserHandler(t *testing.T) {
 func TestGetUserInfoHandler(t *testing.T) {
 
 	srv := &Server{}
-	srv.Users.U = make(map[int]pkg.User)
+	srv.Users.U = map[int]pkg.User{1: {Id: 1, Name: "John", Balance: 800}, 2: {Id: 2, Name: "Rashford", Balance: 900}}
 
 	result := User{}
 
@@ -66,16 +68,14 @@ func TestGetUserInfoHandler(t *testing.T) {
 	}
 	json.Unmarshal(respBody, &result)
 
-	if result != (User{}) {
+	if result != (User{Id: 1, Name: "John", Balance: 800}) {
 		t.Fatalf("Result is not correct!!!")
 	}
 }
 
 func TestDeleteUserHandler(t *testing.T) {
 	srv := &Server{}
-	srv.Users.U = make(map[int]pkg.User)
-
-	result := User{}
+	srv.Users.U = map[int]pkg.User{1: {Id: 1, Name: "John", Balance: 800}, 2: {Id: 2, Name: "Rashford", Balance: 900}}
 
 	req, err := http.NewRequest(http.MethodDelete, "/user/1", nil)
 
@@ -85,22 +85,19 @@ func TestDeleteUserHandler(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	srv.DeleteUserHandler(recorder, req)
-	respBody, err := ioutil.ReadAll(recorder.Body)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	json.Unmarshal(respBody, &result)
 
-	if result != (User{}) {
+	_, ok := srv.Users.U[1]
+
+	if !ok {
 		t.Fatalf("Result is not correct!!!")
 	}
 }
 
 func TestSubtractBalanceFromUser(t *testing.T) {
 	srv := &Server{}
-	srv.Users.U = make(map[int]pkg.User)
+	srv.Users.U = map[int]pkg.User{1: {Id: 1, Name: "John", Balance: 800}, 2: {Id: 2, Name: "Rashford", Balance: 900}}
 
-	testUser := User{Id: 1, Name: "John", Balance: 550}
+	testUser := User{Id: 1, Name: "John", Balance: 400}
 	var result User
 
 	data, err := json.Marshal(testUser)
@@ -110,31 +107,37 @@ func TestSubtractBalanceFromUser(t *testing.T) {
 
 	r := bytes.NewReader(data)
 
-	res, err := http.NewRequest(http.MethodPost, "/user/1/take", r)
+	req, err := http.NewRequest(http.MethodPost, "/user/1/take", r)
 
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	vars := map[string]string{
+		"id": "1",
+	}
+
+	req = mux.SetURLVars(req, vars)
 	recorder := httptest.NewRecorder()
 
-	srv.SubtractBalanceFromUser(recorder, res)
+	srv.SubtractBalanceFromUser(recorder, req)
 	respBody, err := ioutil.ReadAll(recorder.Body)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	json.Unmarshal(respBody, &result)
 
-	if result != (User{}) {
+	if result != (User{Id: 1, Name: "John", Balance: 400}) {
+		fmt.Println(result)
 		t.Fatalf("Result is not correct!!!")
 	}
 }
 
 func TestAddBalanceToUser(t *testing.T) {
 	srv := &Server{}
-	srv.Users.U = make(map[int]pkg.User)
+	srv.Users.U = map[int]pkg.User{1: {Id: 1, Name: "John", Balance: 800}, 2: {Id: 2, Name: "Rashford", Balance: 900}}
 
-	testUser := User{Id: 1, Name: "John", Balance: 550}
-	var result User
+	testUser := pkg.User{Id: 1, Name: "John", Balance: 400}
+	var result pkg.User
 
 	data, err := json.Marshal(testUser)
 	if err != nil {
@@ -143,21 +146,27 @@ func TestAddBalanceToUser(t *testing.T) {
 
 	r := bytes.NewReader(data)
 
-	res, err := http.NewRequest(http.MethodPost, "/user/1/fund", r)
+	req, err := http.NewRequest(http.MethodPost, "/user/1/fund", r)
 
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	vars := map[string]string{
+		"id": "1",
+	}
+
+	req = mux.SetURLVars(req, vars)
 	recorder := httptest.NewRecorder()
 
-	srv.AddBalanceToUser(recorder, res)
+	srv.AddBalanceToUser(recorder, req)
 	respBody, err := ioutil.ReadAll(recorder.Body)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	json.Unmarshal(respBody, &result)
 
-	if result != (User{}) {
+	if result != (pkg.User{Id: 1, Name: "John", Balance: 1200}) {
+		fmt.Println(result)
 		t.Fatalf("Result is not correct!!!")
 	}
 }

@@ -117,6 +117,7 @@ func (s Server) SubtractBalanceFromUser(w http.ResponseWriter, r *http.Request) 
 	}
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
+	fmt.Print(id)
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -160,6 +161,7 @@ func (s Server) AddBalanceToUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	res := FromDomain(s.Users.UpdateUser(pkg.User{id, infoUser.Name, s.Users.U[id].Balance + infoUser.Balance}))
+	fmt.Println("result is ---->", res)
 	inf, err := json.Marshal(res)
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
