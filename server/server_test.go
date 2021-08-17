@@ -42,7 +42,7 @@ func TestCreateUserHandler(t *testing.T) {
 	}
 	json.Unmarshal(respBody, &result)
 
-	if result.Id != 1 || result.Name != "John" || result.Balance != 950 {
+	if result != testUser {
 		t.Fatalf("Result is not correct!!!")
 	}
 }
@@ -52,13 +52,26 @@ func TestGetUserInfoHandler(t *testing.T) {
 	srv := &Server{}
 	srv.Users.U = map[int]pkg.User{1: {Id: 1, Name: "John", Balance: 800}, 2: {Id: 2, Name: "Rashford", Balance: 900}}
 
+	testUser := User{Id: 1, Name: "John", Balance: 800}
 	result := User{}
 
-	req, err := http.NewRequest(http.MethodGet, "/user/1", nil)
+	data, err := json.Marshal(testUser)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	r := bytes.NewReader(data)
+	req, err := http.NewRequest(http.MethodGet, "/user/1", r)
 
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+
+	vars := map[string]string{
+		"id": "1",
+	}
+
+	req = mux.SetURLVars(req, vars)
 	recorder := httptest.NewRecorder()
 
 	srv.GetUserInfoHandler(recorder, req)
@@ -82,13 +95,18 @@ func TestDeleteUserHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	vars := map[string]string{
+		"id": "1",
+	}
+
+	req = mux.SetURLVars(req, vars)
 	recorder := httptest.NewRecorder()
 
 	srv.DeleteUserHandler(recorder, req)
 
 	_, ok := srv.Users.U[1]
 
-	if !ok {
+	if ok {
 		t.Fatalf("Result is not correct!!!")
 	}
 }

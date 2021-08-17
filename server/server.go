@@ -78,6 +78,12 @@ func (s Server) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -86,6 +92,11 @@ func (s Server) GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprint(w, s.Users.U[id])
+	_, err = w.Write(data)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
